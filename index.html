@@ -17,6 +17,8 @@
 <script src='regions.js'></script>
 <script src='words.js'></script>
 <script>
+country_to_player = {"PAP": "Davis"}
+
 country_to_dev = new Map()
 function fillCountryToDev() {
 	pat = new RegExp('[A-Z]{3}')
@@ -121,8 +123,9 @@ function _politicalMapmode(layer) {
 	}
 
 	const pickable = (country_to_dev.has(tag) && country_to_dev.get(tag) < 75 && country_is_in_legal_region.get(tag)) || (tag == "IME" || tag == "CIR")
-	var color = pickable ? "red" : "black"
-	var weight = pickable ? 1 : 0.5
+	const picked = country_to_player.hasOwnProperty(tag)
+	var color = picked ? "green" : pickable ? "red" : "black"
+	var weight = picked ? 2 : pickable ? 1 : 0.5;
 
 	layer.setStyle({
 		fillColor: finalhex,
@@ -137,8 +140,9 @@ function bindOwnerName(feature, layer) {
 	var provinceID = provinces_data[hex]['id'];
 	if (map_data[provinceID] !== undefined) {
 		var ownerName = words[map_data[provinceID]['owner']];
+		var playerName = country_to_player[map_data[provinceID]['owner']]
 		layer.bindPopup(function () {
-			return ownerName;
+			return playerName ? `${ownerName} ( ${playerName} )` : ownerName;
 		});
 	}
 }
