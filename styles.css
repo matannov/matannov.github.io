@@ -1,0 +1,10 @@
+#map{
+    font-size: 14;
+    width: 100%;
+    height: calc( 100vh - 4rem );
+    background-color: rgb(68,107,163);
+    margin:auto;
+    align: center;
+    /*   margin-top:5%; */
+    overflow:hidden;
+}

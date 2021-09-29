@@ -1,0 +1,156 @@
+<html>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+<link rel="stylesheet" href="styles.css">
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<script
+  src="https://code.jquery.com/jquery-3.6.0.js"
+  integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk="
+  crossorigin="anonymous"></script>
+
+
+<div id="body">
+<div id="map" class="style"></div>
+</div>
+<script src='provinces_1.31.js'> </script>
+<script src='provinces.js'></script>
+<script src='map_data.js'></script>
+<script src='regions.js'></script>
+<script>
+country_to_dev = new Map()
+function fillCountryToDev() {
+	pat = new RegExp('[A-Z]{3}')
+	for (const prop in map_data) {
+		if (pat.test(prop) && map_data[prop].hasOwnProperty("total_development")) {
+			country_to_dev.set(prop, map_data[prop].total_development)
+		}
+	}
+}
+
+country_is_in_legal_region = new Map()
+function fillCountryLegalRegion() {
+	pat = new RegExp('[A-Z]{3}')
+	for (const prop in map_data) {
+		if (pat.test(prop) && map_data[prop].hasOwnProperty("capital")) {
+			const capital_has_legal_region = isLegalRegion(regions[map_data[prop].capital])
+			country_is_in_legal_region.set(prop, capital_has_legal_region)
+		}
+	}
+}
+
+function isLegalRegion(region) {
+	if (region[1] == "anatolia_region") {
+		return true
+	}
+	
+	if (region[1] == "maghreb_region") {
+		return true
+	}
+	
+	if (region[0] == "europe_superregion" && region[1] != "british_isles_region") {
+		return true
+	}
+	
+	if (region[0] == "eastern_europe_superregion") {
+		return true
+	}
+	
+	return false
+}
+
+function colorLayer(layer) {
+        layer.setStyle({
+            fillColor: layer.feature.properties.hex,
+            fillOpacity: 1,
+            color: "black"
+        });
+}
+
+function _politicalMapmode(layer) {
+    if(!layer){
+        console.log("No layer associated");
+        return;
+    }
+	if(!layer.feature){
+		console.log("No feature associated with",layer);
+		return;
+	}
+	var hex = layer.feature.properties.hex;
+	var finalhex, bg, tag;
+	if(!provinces_data[hex]){
+		return;
+	}
+	if(!provinces_data[hex]['id']){
+		return;
+	}
+	var provinceid = provinces_data[hex]['id'];
+
+
+	if (map_data[provinceid] !== undefined) {
+		var controller;
+		if (map_data[provinceid]['owner'] === "SEAZONE") {
+			finalhex = "rgb(68,107,163)";
+		}
+        else if (map_data[provinceid]['owner'] === "LACKEN") {
+            finalhex = "rgb(83,132,188)";
+        }
+		else {
+			if(map_data[provinceid]['owner']===undefined){
+				tag = map_data[provinceid]['tribal_owner'];
+			}else{
+				tag = map_data[provinceid]['owner'];
+
+			}
+
+			if (tag !== undefined) {
+				if(map_data[tag]!==undefined) {
+                    if (map_data[tag]['hex'] !== undefined) {
+                        finalhex = map_data[tag]['hex'];
+                    }
+                }
+			} else {
+				if (map_data[provinceid]['base_tax'] > 0) {
+					finalhex = "#949295";
+				} else {
+					finalhex = "#5E5E5E";
+				}
+			}
+		}
+	} else {
+		finalhex ="gray";
+	}
+
+	const pickable = (country_to_dev.has(tag) && country_to_dev.get(tag) < 75 && country_is_in_legal_region.get(tag)) || (tag == "IME" || tag == "CIR")
+	var color = pickable ? "red" : "black"
+	var weight = pickable ? 1 : 0.5
+
+	layer.setStyle({
+		fillColor: finalhex,
+		fillOpacity: 1,
+		weight: weight,
+		color: color
+	});
+}
+
+ $(document).ready(function() {
+        var map = L.map('map', {
+            zoomControl: false,
+            attributionControl: false,
+            maxZoom: 4,
+            zoomSnap: 0.5,
+            minZoom: -2,
+            maxBoundsViscosity: 1,
+            crs: L.CRS.Simple,
+            wheelPxPerZoomLevel: 120,
+            interactive: true
+        }).setView([0, 3000], -1);
+		geojson = L.geoJson(provinces).addTo(map);
+		fillCountryToDev()
+		fillCountryLegalRegion()
+		geojson.eachLayer(_politicalMapmode);
+	   $('.leaflet-control-container').remove();
+		map.getRenderer(map).options.padding = 100;
+        map.setMaxBounds(geojson.getBounds());
+
+})
+</script>
+</html>
