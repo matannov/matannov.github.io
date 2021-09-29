@@ -15,6 +15,7 @@
 <script src='provinces.js'></script>
 <script src='map_data.js'></script>
 <script src='regions.js'></script>
+<script src='words.js'></script>
 <script>
 country_to_dev = new Map()
 function fillCountryToDev() {
@@ -131,6 +132,17 @@ function _politicalMapmode(layer) {
 	});
 }
 
+function bindOwnerName(feature, layer) {
+	var hex = feature.properties.hex;
+	var provinceID = provinces_data[hex]['id'];
+	if (map_data[provinceID] !== undefined) {
+		var ownerName = words[map_data[provinceID]['owner']];
+		layer.bindPopup(function () {
+			return ownerName;
+		});
+	}
+}
+
  $(document).ready(function() {
         var map = L.map('map', {
             zoomControl: false,
@@ -143,7 +155,7 @@ function _politicalMapmode(layer) {
             wheelPxPerZoomLevel: 120,
             interactive: true
         }).setView([0, 3000], -1);
-		geojson = L.geoJson(provinces).addTo(map);
+		geojson = L.geoJson(provinces, {onEachFeature: bindOwnerName}).addTo(map);
 		fillCountryToDev()
 		fillCountryLegalRegion()
 		geojson.eachLayer(_politicalMapmode);
