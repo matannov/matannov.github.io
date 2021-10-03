@@ -17,7 +17,10 @@
 <script src='regions.js'></script>
 <script src='words.js'></script>
 <script>
-country_to_player = {"PAP": "Davis", "HOL": "Thomas", "BRA": "Callum", "HSA": "Ned", "BRI": "Fawcett", "AKK": "Alasdair"}
+country_to_player = {"PAP": "Davis", "HOL": "Thomas", "BRA": "Callum", "HSA": "Ned", "BRI": "Fawcett", "AKK": "Alasdair",
+					 "CRI": "Giorgio", "SAV": "Ashworth-Hayes", "PRO": "Lawrence", "CHR": "Bowman", "LIV": "Ben"}
+					 
+province_override = {298: "CHR", 4543: "CHR", 1945: "CHR", 290: "CHR", 4542: "CHR", 289: "CHR", 2407: "CHR"}
 
 country_to_dev = new Map()
 function fillCountryToDev() {
@@ -25,6 +28,16 @@ function fillCountryToDev() {
 	for (const prop in map_data) {
 		if (pat.test(prop) && map_data[prop].hasOwnProperty("total_development")) {
 			country_to_dev.set(prop, map_data[prop].total_development)
+		}
+	}
+	
+	for (const provid in province_override) {
+		const tag = province_override[provid]
+		const prov_dev = parseInt(map_data[provid].base_manpower) + parseInt(map_data[provid].base_tax) + parseInt(map_data[provid].base_production)
+		if (country_to_dev.has(tag)) {
+			country_to_dev.set(tag, country_to_dev.get(tag) + prov_dev)
+		} else {
+			country_to_dev.set(tag, prov_dev)
 		}
 	}
 }
@@ -97,7 +110,9 @@ function _politicalMapmode(layer) {
             finalhex = "rgb(83,132,188)";
         }
 		else {
-			if(map_data[provinceid]['owner']===undefined){
+			if (province_override[provinceid]!==undefined){
+				tag = province_override[provinceid]
+			}else if(map_data[provinceid]['owner']===undefined){
 				tag = map_data[provinceid]['tribal_owner'];
 			}else{
 				tag = map_data[provinceid]['owner'];
@@ -139,10 +154,12 @@ function bindOwnerName(feature, layer) {
 	var hex = feature.properties.hex;
 	var provinceID = provinces_data[hex]['id'];
 	if (map_data[provinceID] !== undefined) {
-		var ownerName = words[map_data[provinceID]['owner']];
-		var playerName = country_to_player[map_data[provinceID]['owner']]
+		var tag = province_override[provinceID] ? province_override[provinceID] : map_data[provinceID]['owner']
+		var ownerName = words[tag];
+		var playerName = country_to_player[tag]
+		var totalDev = country_to_dev.get(tag)
 		layer.bindPopup(function () {
-			return playerName ? `${ownerName} ( ${playerName} )` : ownerName;
+			return playerName ? `${ownerName} ( ${playerName} ) - ${totalDev}` : `${ownerName} - ${totalDev}`;
 		});
 	}
 }
@@ -159,9 +176,9 @@ function bindOwnerName(feature, layer) {
             wheelPxPerZoomLevel: 120,
             interactive: true
         }).setView([0, 3000], -1);
-		geojson = L.geoJson(provinces, {onEachFeature: bindOwnerName}).addTo(map);
 		fillCountryToDev()
 		fillCountryLegalRegion()
+		geojson = L.geoJson(provinces, {onEachFeature: bindOwnerName}).addTo(map);
 		geojson.eachLayer(_politicalMapmode);
 	   $('.leaflet-control-container').remove();
 		map.getRenderer(map).options.padding = 100;
