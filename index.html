@@ -17,9 +17,7 @@
 <script src='regions.js'></script>
 <script src='words.js'></script>
 <script>
-country_to_player = {"PAP": "Davis", "HOL": "Thomas", "BRA": "Callum", "HSA": "Ned", "BRI": "Fawcett", "AKK": "Alasdair",
-					 "CRI": "Giorgio", "SAV": "Ashworth-Hayes", "PRO": "Lawrence", "CHR": "Bowman", "LIV": "Ben",
-					 "WAL": "Anton", "BRU": "Cillian", "LAN": "Pete", "DTT": "Jonny", "ORL": "Harry", "SOS": "Olly", "KAR": "Weden", "UES": "Pavel?"}
+country_to_player = {}
 					 
 province_override = {298: "CHR", 4543: "CHR", 1945: "CHR", 290: "CHR", 4542: "CHR", 289: "CHR", 2407: "CHR"}
 europe_override = new Set(["IME", "GEO", "GAZ", "CIR", "AVR", "SME"])
@@ -57,10 +55,6 @@ function fillCountryLegalRegion() {
 
 function isLegalRegion(region) {
 	if (region[1] == "anatolia_region") {
-		return true
-	}
-	
-	if (region[1] == "maghreb_region") {
 		return true
 	}
 	
@@ -141,8 +135,12 @@ function _politicalMapmode(layer) {
 
 	const pickable = (country_to_dev.has(tag) && country_to_dev.get(tag) < 75 && country_is_in_legal_region.get(tag)) || europe_override.has(tag)
 	const picked = country_to_player.hasOwnProperty(tag)
-	var color = picked ? "green" : pickable ? "red" : "black"
-	var weight = picked ? 2 : pickable ? 1 : 0.5;
+	var color = picked ? "green" : pickable ? "black" : "black"
+	var weight = picked ? 3 : pickable ? 2 : 0.2;
+	
+	if (pickable) {
+		console.log(words[map_data[provinceid]['owner']])
+	}
 
 	layer.setStyle({
 		fillColor: finalhex,
